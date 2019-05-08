@@ -7,7 +7,7 @@ trigger:
 - master
 
 pool:
-  vmImage: 'Ubuntu-16.04'
+  vmImage: 'ubuntu-latest'
 
 steps:
 - task: Maven@3
@@ -15,8 +15,49 @@ steps:
     mavenPomFile: 'pom.xml'
     mavenOptions: '-Xmx3072m'
     javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.11'
+    jdkVersionOption: '1.8'
     jdkArchitectureOption: 'x64'
     publishJUnitResults: false
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
     goals: 'package'
+
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to artifact staging directory'
+  inputs:
+    SourceFolder: '$(System.DefaultWorkingDirectory)'
+    Contents: '**/target/*.?(war|jar)'
+    TargetFolder: $(Build.ArtifactStagingDirectory)
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)'
+    ArtifactName: my-pet-app
+
+- task: DownloadBuildArtifacts@0
+  inputs:
+    buildType: 'current'
+    downloadType: 'single'
+    artifactName: 'my-pet-app'
+    itemPattern: '**/*.war'
+    downloadPath: '$(System.ArtifactsDirectory)'
+
+#
+#- task: AzureRmWebAppDeployment@4
+#  inputs:
+#    ConnectionType: 'AzureRM'
+#    azureSubscription: 'Free Trial (a67d5c73-0d83-45f1-b18d-14574d3b4f25)'
+#    appType: 'webAppLinux'
+#    WebAppName: 'isdcappservice'
+#    packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.war'
+#    RuntimeStack: 'TOMCAT|8.5-jre8'
+
+
+- task: AzureRmWebAppDeployment@4
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'dc_connection_new'
+    appType: 'webAppLinux'
+    WebAppName: 'isdcappservice'
+    packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.war'
+    RuntimeStack: 'TOMCAT|8.5-jre8'
